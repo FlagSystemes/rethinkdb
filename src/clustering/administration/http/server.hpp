@@ -9,6 +9,7 @@
 #include "arch/io/openssl.hpp"
 #include "clustering/administration/metadata.hpp"
 #include "clustering/administration/namespace_interface_repository.hpp"
+#include "http/auth_app.hpp"
 #include "http/http.hpp"
 #include "rpc/semilattice/view.hpp"
 
@@ -27,7 +28,8 @@ public:
         int port,
         http_app_t *reql_app,
         std::string _path,
-        tls_ctx_t *tls_ctx);
+        tls_ctx_t *tls_ctx,
+        clone_ptr_t<watchable_t<auth_semilattice_metadata_t>> auth_watchable);
     ~administrative_http_server_manager_t();
 
     int get_port() const;
@@ -39,6 +41,9 @@ private:
 #endif
     scoped_ptr_t<routing_http_app_t> ajax_routing_app;
     scoped_ptr_t<routing_http_app_t> root_routing_app;
+    // auth_app must be declared after root_routing_app (it wraps it) and
+    // before server (server holds a pointer to it).
+    scoped_ptr_t<auth_http_app_t> auth_app;
     scoped_ptr_t<http_server_t> server;
 
     DISABLE_COPYING(administrative_http_server_manager_t);  // kind of redundant with the scoped_ptrs but too bad.

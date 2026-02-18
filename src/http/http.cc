@@ -114,7 +114,8 @@ http_req_t::http_req_t(const http_req_t &from, const resource_t::iterator& resou
       query_params(from.query_params),
       version(from.version),
       header_lines(from.header_lines),
-      body(from.body) { }
+      body(from.body),
+      authenticated_user(from.authenticated_user) { }
 
 optional<std::string> http_req_t::find_query_param(const std::string& key) const {
     std::map<std::string, std::string>::const_iterator it = query_params.find(key);
@@ -382,6 +383,10 @@ std::string human_readable_status(http_status_code_t code) {
     switch (code) {
     case http_status_code_t::OK:
         return "OK";
+    case http_status_code_t::SEE_OTHER:
+        return "See Other";
+    case http_status_code_t::UNAUTHORIZED:
+        return "Unauthorized";
     case http_status_code_t::BAD_REQUEST:
         return "Bad Request";
     case http_status_code_t::FORBIDDEN:

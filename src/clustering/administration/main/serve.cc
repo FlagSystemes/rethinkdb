@@ -595,7 +595,8 @@ bool do_serve(io_backender_t *io_backender,
                                 serve_info.ports.http_port,
                                 rdb_query_server.get_http_app(),
                                 serve_info.web_assets,
-                                serve_info.tls_configs.web.get()));
+                                serve_info.tls_configs.web.get(),
+                                rdb_ctx.get_auth_watchable()));
                         logNTC("Listening for administrative HTTP connections on port %d\n",
                                admin_server_ptr->get_port());
                         /* If `serve_info.ports.http_port` was zero then the OS assigned

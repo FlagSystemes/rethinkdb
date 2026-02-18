@@ -76,12 +76,17 @@ struct http_req_t {
     optional<std::string> find_header_line(const std::string&) const;
     void add_header_line(const std::string&, const std::string&);
     bool has_header_line(const std::string&) const;
+
+    // Set by auth middleware after successful authentication; empty if not authenticated.
+    std::string authenticated_user;
 };
 
 int content_length(const http_req_t&);
 
 enum class http_status_code_t {
     OK = 200,
+    SEE_OTHER = 303,
+    UNAUTHORIZED = 401,
     BAD_REQUEST = 400,
     FORBIDDEN = 403,
     NOT_FOUND = 404,

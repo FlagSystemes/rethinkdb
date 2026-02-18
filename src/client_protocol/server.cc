@@ -47,7 +47,8 @@
 #include "time.hpp"
 
 http_conn_cache_t::http_conn_t::http_conn_t(rdb_context_t *rdb_ctx,
-                                            ip_and_port_t client_addr_port) :
+                                            ip_and_port_t client_addr_port,
+                                            const std::string &username) :
     last_accessed(time(nullptr)),
     // We always return empty normal batches after the timeout for HTTP
     // connections; I think we have to do this to keep the conn cache
@@ -57,7 +58,7 @@ http_conn_cache_t::http_conn_t::http_conn_t(rdb_context_t *rdb_ctx,
             rdb_ctx,
             client_addr_port,
             ql::return_empty_normal_batches_t::YES,
-            auth::user_context_t(auth::username_t("admin")))),
+            auth::user_context_t(auth::username_t(username)))),
     counter(&rdb_ctx->stats.client_connections) { }
 
 ql::query_cache_t *http_conn_cache_t::http_conn_t::get_query_cache() {
@@ -125,7 +126,8 @@ counted_t<http_conn_cache_t::http_conn_t> http_conn_cache_t::find(
 
 http_conn_cache_t::conn_key_t http_conn_cache_t::create(
         rdb_context_t *rdb_ctx,
-        ip_and_port_t client_addr_port) {
+        ip_and_port_t client_addr_port,
+        const std::string &username) {
     assert_thread();
     // Generate a 128 bit random key to avoid XSS attacks where someone
     // could run queries by guessing the connection ID.
@@ -140,7 +142,7 @@ http_conn_cache_t::conn_key_t http_conn_cache_t::create(
                                    sizeof(key_buf));
 
     cache.insert(
-        std::make_pair(key, make_counted<http_conn_t>(rdb_ctx, client_addr_port)));
+        std::make_pair(key, make_counted<http_conn_t>(rdb_ctx, client_addr_port, username)));
     return key;
 }
 
@@ -638,8 +640,10 @@ void query_server_t::handle(const http_req_t &req,
     auto_drainer_t::lock_t auto_drainer_lock(&drainer);
     if (req.method == http_method_t::POST &&
         req.resource.as_string().find("open-new-connection") != std::string::npos) {
+        const std::string &username = req.authenticated_user.empty()
+            ? std::string("admin") : req.authenticated_user;
         http_conn_cache_t::conn_key_t conn_id
-            = http_conn_cache.create(rdb_ctx, req.peer);
+            = http_conn_cache.create(rdb_ctx, req.peer, username);
 
         result->set_body("text/plain", conn_id);
         result->code = http_status_code_t::OK;

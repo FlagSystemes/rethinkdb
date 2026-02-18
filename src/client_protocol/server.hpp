@@ -39,7 +39,8 @@ public:
     class http_conn_t : public single_threaded_countable_t<http_conn_t> {
     public:
         http_conn_t(rdb_context_t *rdb_ctx,
-                    ip_and_port_t client_addr_port);
+                    ip_and_port_t client_addr_port,
+                    const std::string &username);
 
         ql::query_cache_t *get_query_cache();
         signal_t *get_interruptor();
@@ -61,7 +62,8 @@ public:
     ~http_conn_cache_t();
 
     counted_t<http_conn_t> find(const conn_key_t &key);
-    conn_key_t create(rdb_context_t *rdb_ctx, ip_and_port_t client_addr_port);
+    conn_key_t create(rdb_context_t *rdb_ctx, ip_and_port_t client_addr_port,
+                      const std::string &username);
     void erase(const conn_key_t &key);
 
     void on_ring();

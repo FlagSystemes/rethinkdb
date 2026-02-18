@@ -12,7 +12,8 @@ administrative_http_server_manager_t::administrative_http_server_manager_t(
         int port,
         http_app_t *reql_app,
         std::string path,
-        tls_ctx_t *tls_ctx)
+        tls_ctx_t *tls_ctx,
+        clone_ptr_t<watchable_t<auth_semilattice_metadata_t>> auth_watchable)
 {
 
     file_app.init(new file_http_app_t(path));
@@ -30,7 +31,9 @@ administrative_http_server_manager_t::administrative_http_server_manager_t(
     root_routes["ajax"] = ajax_routing_app.get();
     root_routing_app.init(new routing_http_app_t(file_app.get(), root_routes));
 
-    server.init(new http_server_t(tls_ctx, local_addresses, port, root_routing_app.get()));
+    auth_app.init(new auth_http_app_t(root_routing_app.get(), std::move(auth_watchable)));
+
+    server.init(new http_server_t(tls_ctx, local_addresses, port, auth_app.get()));
 }
 
 administrative_http_server_manager_t::~administrative_http_server_manager_t() {
